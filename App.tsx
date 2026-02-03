@@ -156,11 +156,66 @@ export default function App() {
   const onSearchPrinters = () =>
     run(async () => {
       if (!driverRef.current) driverRef.current = buildDriver();
-      setStatus('Buscando impresoras...');
-      const found = await driverRef.current.listDevices();
-      setDevices(found);
-      setSelectedDeviceId((prev) => prev ?? found[0]?.id ?? null);
-      setStatus(found.length ? `Encontradas: ${found.length}` : 'No se encontraron impresoras (revisa emparejamiento)');
+      
+      console.log('[App] Iniciando búsqueda de impresoras...');
+      setStatus('Buscando impresoras emparejadas...');
+      setDevices([]); // Limpiar lista anterior
+      
+      try {
+        const found = await driverRef.current.listDevices();
+        console.log(`[App] Búsqueda completada. Encontradas: ${found.length}`);
+        
+        // Filtrar solo impresoras (excluir teléfonos, auriculares, etc.)
+        const printers = found.filter(device => {
+          const name = (device.name || '').toLowerCase();
+          // Incluir si contiene palabras clave de impresoras
+          const isPrinter = 
+            name.includes('printer') ||
+            name.includes('print') ||
+            name.includes('impresora') ||
+            name.includes('zebra') ||
+            name.includes('pt-') ||
+            name.includes('rp') || // Común en impresoras térmicas
+            name.includes('pos') ||
+            name.includes('thermal') ||
+            name.includes('receipt') ||
+            name.includes('g00') || // Tu impresora PT-210
+            name.includes('epson') ||
+            name.includes('bixolon') ||
+            name.includes('star') ||
+            name.includes('zq');
+          
+          // Excluir si contiene palabras de otros dispositivos
+          const isNotPrinter = 
+            name.includes('phone') ||
+            name.includes('galaxy') ||
+            name.includes('buds') ||
+            name.includes('airpods') ||
+            name.includes('headset') ||
+            name.includes('speaker') ||
+            name.includes('watch') ||
+            name.includes('tv');
+          
+          return isPrinter && !isNotPrinter;
+        });
+        
+        console.log(`[App] Impresoras filtradas: ${printers.length} de ${found.length} dispositivos`);
+        
+        setDevices(printers);
+        setSelectedDeviceId((prev) => prev ?? printers[0]?.id ?? null);
+        
+        if (printers.length === 0) {
+          setStatus('❌ No se encontraron impresoras emparejadas.');
+          setError('Empareja tu impresora PT-210 en: Configuración > Bluetooth del teléfono. Luego vuelve a buscar aquí.');
+        } else {
+          setStatus(`✅ Encontradas: ${printers.length} impresora${printers.length !== 1 ? 's' : ''}`);
+          console.log('[App] Lista de impresoras:');
+          printers.forEach(d => console.log(`  - ${d.name} (${d.address})`));
+        }
+      } catch (err) {
+        console.error('[App] Error en búsqueda:', err);
+        throw err; // Re-throw para que run() lo maneje
+      }
     });
 
   const onConnect = () =>
@@ -334,8 +389,10 @@ export default function App() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Impresoras</Text>
         <FlatList
+          style={styles.deviceList}
           data={devices}
           keyExtractor={(item) => item.id}
+          nestedScrollEnabled={true}
           renderItem={({ item }) => {
             const selected = item.id === selectedDeviceId;
             const connected = item.id === connectedDeviceId;
@@ -378,6 +435,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: '700', marginBottom: 10, color: '#111' },
   row: { flexDirection: 'row', gap: 10, flexWrap: 'wrap', alignItems: 'center' },
 
+  deviceList: { maxHeight: 250 }, // Permitir scroll cuando hay muchos dispositivos
+
   chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: '#ddd' },
   chipSmall: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, borderWidth: 1, borderColor: '#ddd' },
   chipActive: { backgroundColor: '#111', borderColor: '#111' },
@@ -396,7 +455,7 @@ const styles = StyleSheet.create({
   },
 
   button: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#ddd' },
-  buttonPrimary: { backgroundColor: '#111', borderColor: '#111', marginTop: 10 },
+  buttonPrimary: { backgroundColor: '#ffffff', borderColor: '#454545', marginTop: 10 },
   buttonText: { color: '#111', fontWeight: '600' },
 
   statusRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 10 },

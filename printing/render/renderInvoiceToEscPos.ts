@@ -28,50 +28,106 @@ function twoCols(left: string, right: string, width: number): string {
   return `${padRight(truncate(left, leftWidth), leftWidth)} ${rightTrim}`;
 }
 
-// Minimal ESC/POS bytes for init + feed
+// ESC/POS command bytes
 const ESC = 0x1b;
 const GS = 0x1d;
 
+// Comandos ESC/POS comunes para optimización
+const CMD = {
+  INIT: Buffer.from([ESC, 0x40]), // Inicializar impresora
+  BOLD_ON: Buffer.from([ESC, 0x45, 0x01]), // Negrita ON
+  BOLD_OFF: Buffer.from([ESC, 0x45, 0x00]), // Negrita OFF
+  ALIGN_CENTER: Buffer.from([ESC, 0x61, 0x01]), // Centrar
+  ALIGN_LEFT: Buffer.from([ESC, 0x61, 0x00]), // Izquierda
+  FEED_3: Buffer.from([ESC, 0x64, 0x03]), // 3 líneas
+  CUT: Buffer.from([GS, 0x56, 0x00]), // Cortar papel (si soporta)
+  LF: Buffer.from([0x0A]), // Line feed
+};
+
 export function renderInvoiceToEscPos(invoiceData: InvoiceData, options: EscPosRenderOptions = {}): Buffer {
   const width = options.paperWidthChars ?? 48;
-  const out: string[] = [];
+  
+  // Construir el documento usando Buffers directamente (más eficiente)
+  const parts: Buffer[] = [];
+  
+  // Inicializar
+  parts.push(CMD.INIT);
+  
+  // Encabezado (centrado y negrita)
+  parts.push(CMD.ALIGN_CENTER, CMD.BOLD_ON);
+  parts.push(Buffer.from(truncate(invoiceData.business.name, width) + '\n', 'utf8'));
+  parts.push(CMD.BOLD_OFF);
+  
+  for (const l of invoiceData.business.addressLines ?? []) {
+    parts.push(Buffer.from(truncate(l, width) + '\n', 'utf8'));
+  }
+  if (invoiceData.business.phone) {
+    parts.push(Buffer.from(`Tel: ${truncate(invoiceData.business.phone, width - 5)}\n`, 'utf8'));
+  }
+  
+  parts.push(CMD.ALIGN_LEFT);
+  parts.push(Buffer.from('-'.repeat(width) + '\n', 'ascii'));
 
-  out.push(line(invoiceData.business.name));
-  for (const l of invoiceData.business.addressLines ?? []) out.push(line(l));
-  if (invoiceData.business.phone) out.push(line(`Tel: ${invoiceData.business.phone}`));
-  out.push(line('-'.repeat(width)));
+  // Info de factura
+  const dateStr = formatDateTime(invoiceData.issuedAtISO);
+  parts.push(Buffer.from(twoCols(`Factura: ${invoiceData.invoiceNumber}`, dateStr, width) + '\n', 'utf8'));
+  
+  if (invoiceData.customer?.name) {
+    parts.push(Buffer.from(`Cliente: ${truncate(invoiceData.customer.name, width - 9)}\n`, 'utf8'));
+  }
+  if (invoiceData.customer?.id) {
+    parts.push(Buffer.from(`ID: ${truncate(invoiceData.customer.id, width - 4)}\n`, 'utf8'));
+  }
+  
+  parts.push(Buffer.from('-'.repeat(width) + '\n', 'ascii'));
 
-  out.push(line(twoCols(`Factura: ${invoiceData.invoiceNumber}`, formatDateTime(invoiceData.issuedAtISO), width)));
-  if (invoiceData.customer?.name) out.push(line(`Cliente: ${invoiceData.customer.name}`));
-  if (invoiceData.customer?.id) out.push(line(`ID: ${invoiceData.customer.id}`));
-  out.push(line('-'.repeat(width)));
-
-  for (const it of invoiceData.items) {
+  // Items (limitar a 20 para evitar facturas muy largas en impresoras lentas)
+  const maxItems = 20;
+  const items = invoiceData.items.slice(0, maxItems);
+  
+  for (const it of items) {
     const subtotal = formatMoney(it.qty * it.unitPriceCents, invoiceData.currency);
-    out.push(line(twoCols(`${it.qty}x ${it.name}`, subtotal, width)));
+    const itemName = truncate(it.name, width - subtotal.length - 5);
+    parts.push(Buffer.from(twoCols(`${it.qty}x ${itemName}`, subtotal, width) + '\n', 'utf8'));
+  }
+  
+  if (invoiceData.items.length > maxItems) {
+    parts.push(Buffer.from(`... +${invoiceData.items.length - maxItems} artículos más\n`, 'utf8'));
   }
 
-  out.push(line('-'.repeat(width)));
-  out.push(line(twoCols('Subtotal', formatMoney(invoiceData.totals.subtotalCents, invoiceData.currency), width)));
-  if (invoiceData.totals.taxCents) out.push(line(twoCols('Impuesto', formatMoney(invoiceData.totals.taxCents, invoiceData.currency), width)));
-  if (invoiceData.totals.discountCents) out.push(line(twoCols('Descuento', formatMoney(-Math.abs(invoiceData.totals.discountCents), invoiceData.currency), width)));
-  out.push(line(twoCols('TOTAL', formatMoney(invoiceData.totals.totalCents, invoiceData.currency), width)));
+  parts.push(Buffer.from('-'.repeat(width) + '\n', 'ascii'));
+  
+  // Totales
+  parts.push(Buffer.from(twoCols('Subtotal', formatMoney(invoiceData.totals.subtotalCents, invoiceData.currency), width) + '\n', 'utf8'));
+  
+  if (invoiceData.totals.taxCents) {
+    parts.push(Buffer.from(twoCols('Impuesto', formatMoney(invoiceData.totals.taxCents, invoiceData.currency), width) + '\n', 'utf8'));
+  }
+  
+  if (invoiceData.totals.discountCents) {
+    parts.push(Buffer.from(twoCols('Descuento', formatMoney(-Math.abs(invoiceData.totals.discountCents), invoiceData.currency), width) + '\n', 'utf8'));
+  }
+  
+  // Total en negrita
+  parts.push(CMD.BOLD_ON);
+  parts.push(Buffer.from(twoCols('TOTAL', formatMoney(invoiceData.totals.totalCents, invoiceData.currency), width) + '\n', 'utf8'));
+  parts.push(CMD.BOLD_OFF);
 
+  // Notas
   if (invoiceData.notes) {
-    out.push(line(''));
-    out.push(line(invoiceData.notes));
+    parts.push(CMD.LF);
+    parts.push(Buffer.from(truncate(invoiceData.notes, width * 3) + '\n', 'utf8'));
   }
 
-  out.push(line(''));
-  out.push(line('Gracias por su compra.'));
+  // Despedida centrada
+  parts.push(CMD.LF, CMD.ALIGN_CENTER);
+  parts.push(Buffer.from('Gracias por su compra.\n', 'utf8'));
+  parts.push(CMD.ALIGN_LEFT);
 
-  const text = out.join('');
+  // Feed y cortar
+  parts.push(CMD.FEED_3);
+  parts.push(CMD.CUT);
 
-  // ESC/POS commands: Initialize, text, feed, cut (if supported)
-  const init = Buffer.from([ESC, 0x40]);
-  const payload = Buffer.from(text, 'ascii');
-  const feed = Buffer.from([ESC, 0x64, 0x05]);
-  const cut = Buffer.from([GS, 0x56, 0x00]);
-
-  return Buffer.concat([init, payload, feed, cut]);
+  // Concatenar todo de una vez (más eficiente que muchas operaciones)
+  return Buffer.concat(parts);
 }
