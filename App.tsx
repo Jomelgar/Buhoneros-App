@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import { useEffect } from 'react';
 import { loadDatabase, initDB, testDynamicDB, resetDatabase } from './db';
+import LoginButton from './src/components/ui/button/loginButton';
 
 const initializeDatabase = async () => {
   try {
@@ -38,6 +39,7 @@ export default function App() {
     <View style={styles.container}>
       <Text>Buhoneros App</Text>
       <Text style={styles.subtitle}>Ver logs de la carga de la DB en consola</Text>
+      <LoginButton/>
       <StatusBar style="auto" />
     </View>
   );
