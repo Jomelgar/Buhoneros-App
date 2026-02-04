@@ -1,0 +1,26 @@
+{
+  "invoiceNumber": "F-000123",
+  "issuedAtISO": "2026-02-02T12:34:56.000Z",
+  "currency": "HNL",
+  "business": {
+    "name": "Buhoneros App",
+    "addressLines": ["Tegucigalpa, Honduras"],
+    "phone": "+504 0000-0000"
+  },
+  "customer": {
+    "name": "Cliente Demo",
+    "id": "0801-0000-00000"
+  },
+  "items": [
+    {"name": "Producto A (nombre largo para probar wrap)", "qty": 2, "unitPriceCents": 15000},
+    {"name": "Producto B", "qty": 1, "unitPriceCents": 9999}
+  ],
+  "totals": {
+    "subtotalCents": 39999,
+    "taxCents": 0,
+    "discountCents": 0,
+    "totalCents": 39999
+  },
+  "notes": "Gracias por su compra.",
+  "qrValue": "https://example.com/factura/F-000123"
+}
