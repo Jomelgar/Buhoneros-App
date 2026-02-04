@@ -4,11 +4,11 @@
     "slug": "buhoneros-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/municipalidad-logo.svg",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/municipalidad-logo.svg",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
