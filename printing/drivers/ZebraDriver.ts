@@ -1,4 +1,9 @@
 import type { InvoiceData } from '../types';
+/**
+ * SECCIÓN DE IMPRESIONES - Driver Zebra (ZPL/CPCL)
+ * NO MODIFICAR SIN REVISAR - VERIFICADO Y FUNCIONAL
+ */
+
 import { BaseBluetoothClassicDriver } from './BaseBluetoothClassicDriver';
 import { renderInvoiceToZpl } from '../render/renderInvoiceToZpl';
 import { renderInvoiceToCpcl } from '../render/renderInvoiceToCpcl';

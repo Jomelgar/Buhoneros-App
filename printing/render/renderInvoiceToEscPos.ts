@@ -1,4 +1,12 @@
 import type { InvoiceData } from '../types';
+/**
+ * SECCIÓN DE IMPRESIONES - Renderizador ESC/POS
+ * NO MODIFICAR SIN REVISAR - VERIFICADO Y FUNCIONAL
+ * 
+ * Genera comandos ESC/POS para impresoras térmicas genéricas.
+ * Optimizado con Buffer directo y límite de 20 items.
+ */
+
 import { Buffer } from 'buffer';
 import { formatDateTime, formatMoney } from '../utils/format';
 import { truncate } from '../utils/text';

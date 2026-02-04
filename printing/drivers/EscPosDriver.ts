@@ -1,4 +1,10 @@
 import type { InvoiceData } from '../types';
+/**
+ * SECCIÓN DE IMPRESIONES - Driver ESC/POS (Impresoras genéricas)
+ * NO MODIFICAR SIN REVISAR - VERIFICADO Y FUNCIONAL
+ * Compatible con impresoras térmicas como PT-210
+ */
+
 import { BaseBluetoothClassicDriver } from './BaseBluetoothClassicDriver';
 import { renderInvoiceToEscPos } from '../render/renderInvoiceToEscPos';
 
