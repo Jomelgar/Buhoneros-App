@@ -1,32 +1,34 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import { useEffect } from 'react';
-import { loadDatabase, initDB, testDynamicDB, resetDatabase } from './db';
-import LoginButton from './src/components/ui/button/loginButton';
-
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import { loadDatabase, initDB, testDynamicDB, resetDatabase } from "./db";
+import {DisableButton, ErrorButton, PrimaryButton,SecondaryButton} from "./src/components/ui/button";
+import "./global.css";
 const initializeDatabase = async () => {
   try {
-    console.log('Iniciando aplicación...');
-    
+    console.log("Iniciando aplicación...");
+
     // Limpiar la base de datos existente para evitar conflictos
     await resetDatabase();
-    
+
     // Intentar cargar desde assets primero
     const loadResult = await loadDatabase();
-    
+
     if (loadResult === false) {
-      console.log('No se encontró base de datos en assets, creando dinámicamente...');
-      
+      console.log(
+        "No se encontró base de datos en assets, creando dinámicamente...",
+      );
+
       // Si no existe el asset, crear dinámicamente
       await initDB();
-      
+
       // Probar la base de datos dinámica
       await testDynamicDB();
     } else {
-      console.log('Base de datos cargada exitosamente desde assets');
+      console.log("Base de datos cargada exitosamente desde assets");
     }
   } catch (error) {
-    console.error('Error al inicializar la Base de Datos:', error);
+    console.error("Error al inicializar la Base de Datos:", error);
   }
 };
 
@@ -37,9 +39,17 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text>Buhoneros App</Text>
-      <Text style={styles.subtitle}>Ver logs de la carga de la DB en consola</Text>
-      <LoginButton/>
+      <Text className="text-xl font-bold text-blue-500">
+        Ya tenemos Nativewind
+      </Text>
+      ;<Text>Buhoneros App</Text>
+      <Text style={styles.subtitle}>
+        Ver logs de la carga de la DB en consola 
+      </Text>
+      <PrimaryButton text={"Ingresar"}/>
+      <DisableButton text={"Deshabilitado"}/>
+      <ErrorButton text="Error"/>
+      <SecondaryButton text="Secundario"/>
       <StatusBar style="auto" />
     </View>
   );
@@ -48,14 +58,14 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   subtitle: {
     marginTop: 10,
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
   },
 });

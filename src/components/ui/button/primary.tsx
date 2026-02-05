@@ -1,10 +1,11 @@
+
 import React from 'react';
-import { View } from 'react-native';
+import { Text } from 'react-native';
 import { Button,Card } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useWindowDimensions } from 'react-native';
 
-export default function LoginButton() {
+export default function primaryButton({text}) : React.ReactElement {
     const {width} = useWindowDimensions();
   return (
     <Card
@@ -20,8 +21,8 @@ export default function LoginButton() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       >
-        <Button textColor="#FFFFFF">
-          Ingresar
+        <Button>
+          <Text className="text-white text-xl">{text}</Text>
         </Button>
       </LinearGradient>
     </Card>
