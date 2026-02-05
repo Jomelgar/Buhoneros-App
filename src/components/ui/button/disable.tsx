@@ -5,7 +5,12 @@ import { Button,Card } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useWindowDimensions } from 'react-native';
 
-export default function DisableButton({text}) : React.ReactElement {
+type EntryProps = {
+  text: string; 
+  action?:() => void; 
+}
+
+export default function DisableButton({text, action = () => {}} : EntryProps ) : React.ReactElement {
     const {width} = useWindowDimensions();
   return (
     <Card

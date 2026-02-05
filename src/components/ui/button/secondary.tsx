@@ -1,9 +1,15 @@
 import React from 'react';
 import { Text, View, Pressable } from 'react-native';
+import {Button} from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useWindowDimensions } from 'react-native';
 
-export default function SecondaryButton({ text }): React.ReactElement {
+type EntryProps = {
+  text: string; 
+  action?:() => void; 
+}
+
+export default function SecondaryButton({ text, action = () => {} } : EntryProps): React.ReactElement {
   const { width } = useWindowDimensions();
 
   return (
@@ -18,16 +24,16 @@ export default function SecondaryButton({ text }): React.ReactElement {
         marginBottom: 12,
       }}
     >
-      <View
+      <Button
+        onPress={action}
         style={{
           backgroundColor: '#FFFFFF',
           borderRadius: 6,
-          paddingVertical: 12,
           alignItems: 'center',
         }}
       >
         <Text style={{ color: '#00A651', fontSize: 18 }}>{text}</Text>
-      </View>
+      </Button>
     </LinearGradient>
   );
 }

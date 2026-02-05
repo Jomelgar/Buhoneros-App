@@ -5,7 +5,12 @@ import { Button,Card } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useWindowDimensions } from 'react-native';
 
-export default function primaryButton({text}) : React.ReactElement {
+type EntryProps = {
+  text: string; 
+  action?:() => void; 
+}
+
+export default function primaryButton({text, action = () => {}}: EntryProps) : React.ReactElement {
     const {width} = useWindowDimensions();
   return (
     <Card
@@ -21,7 +26,7 @@ export default function primaryButton({text}) : React.ReactElement {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
       >
-        <Button>
+        <Button onPress={action}>
           <Text className="text-white text-xl">{text}</Text>
         </Button>
       </LinearGradient>
